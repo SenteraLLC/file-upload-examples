@@ -29,37 +29,37 @@
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            45
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            47
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            44
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            42
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            25
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            15
           ],
           [
             -94.79915088090505,
             44.097927093782694,
-            50
+            5
           ]
         ]
       },
@@ -72,18 +72,10 @@
     "app_version": "4.2.5",
     "dji_sdk_version": "1.1.1.1",
     "app_features": [
-      {
-        "feature": "Feature1",
-        "enabled": true
-      },
-      {
-        "feature": "Feature2",
-        "enabled": true
-      }
     ],
-    "user_sentera_id": "sentera_id",
+    "user_sentera_id": "user1234",
     "drone_model": "p4p",
-    "drone_serial_number": "abc1234",
+    "drone_serial_number": "drone1234",
     "weather_condition": "Sunny",
     "weather_wind_direction": "South East",
     "weather_wind_speed": 20,
