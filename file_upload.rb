@@ -36,11 +36,11 @@ end
 # for details on how to obtain an auth token to use with Sentera's GraphQL API
 AUTH_TOKEN = load_auth_token
 
-def create_file_upload(file_path, content_type)
+def prepare_file_upload(file_path, content_type)
   #
   # This method demonstrates how to use the create_file_upload
-  # mutation in Sentera's GraphQL API to get the information
-  # needed to upload a file to Sentera's cloud storage.
+  # mutation in Sentera's GraphQL API to prepare a file for
+  # upload to Sentera's cloud storage.
   #
   uri = URI(GQL_ENDPOINT)
   http = Net::HTTP.new(uri.host, uri.port)
@@ -143,16 +143,16 @@ end
 file_path = 'example_flight_log.json'
 content_type = 'application/json'
 
-# Step 1: Create a file upload
-file_upload_json = create_file_upload(file_path, content_type)
+# Step 1: Prepare to upload a file
+prepared_upload_json = prepare_file_upload(file_path, content_type)
 
 # Step 2: Upload the file
-upload_url = file_upload_json['url']
-upload_headers = file_upload_json['headers']
+upload_url = prepared_upload_json['url']
+upload_headers = prepared_upload_json['headers']
 upload_file(upload_url, upload_headers, file_path)
 
-# Step 3: Use the file
-file_id = file_upload_json['id']
+# Step 3: Use the file with Sentera FieldAgent
+file_id = prepared_upload_json['id']
 use_file(file_id)
 
 puts 'Done!'

@@ -4,7 +4,7 @@ Examples in different languages that demonstrate how to upload a file to [Senter
 ## Workflow
 There are three basic steps for uploading a file and using it with Sentera FieldAgent:
 
-1. **Create a file upload** - Request credentials for uploading a file to Sentera's cloud storage.
+1. **Prepare the file upload** - Request credentials for uploading a file to Sentera's cloud storage.
 2. **Upload the file** - Upload a file directly to Sentera's cloud storage using a pre-signed upload URL.
 3. **Use the file** - Specify the ID of the uploaded file with one of the mutations in [Sentera's GraphQL API](https://api.sentera.com/api/docs/mutation.doc.html) to attach the file to a resource such as a field, survey, feature set, etc.
 
