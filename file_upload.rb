@@ -18,9 +18,23 @@ require 'digest'
 
 GQL_ENDPOINT = 'https://api.sentera.com/graphql'
 
+AUTH_TOKEN_FILENAME = 'auth_token.txt' # Add your API auth token to this file
+
+def load_auth_token
+  unless File.exist?(AUTH_TOKEN_FILENAME)
+    raise <<~ERROR
+      #{AUTH_TOKEN_FILENAME} does not exist.
+      Copy #{AUTH_TOKEN_FILENAME}.example to #{AUTH_TOKEN_FILENAME},
+      replace the placeholder with your auth token, and then run again.
+    ERROR
+  end
+
+  File.read(AUTH_TOKEN_FILENAME)
+end
+
 # See https://api.sentera.com/api/getting_started/authentication_and_authorization.html
 # for details on how to obtain an auth token to use with Sentera's GraphQL API
-AUTH_TOKEN = '<Your auth token goes here>'
+AUTH_TOKEN = load_auth_token
 
 def create_file_upload(file_path, content_type)
   #
