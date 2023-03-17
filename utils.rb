@@ -3,8 +3,7 @@ require 'net/http'
 
 FIELDAGENT_ACCESS_TOKEN_FILENAME = 'fieldagent_access_token.txt' # Add your FieldAgent access token to this file
 
-# GQL_ENDPOINT = 'https://api.sentera.com/graphql'
-GQL_ENDPOINT = 'http://localhost:3000/graphql'
+GQL_ENDPOINT = 'https://api.sentera.com/graphql'
 
 #
 # Loads the access token specified in FIELDAGENT_ACCESS_TOKEN_FILENAME
