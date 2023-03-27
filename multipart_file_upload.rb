@@ -272,7 +272,7 @@ FIELDAGENT_ACCESS_TOKEN = load_fieldagent_access_token
 # Set these variables based on the file you want to
 # upload and the resource within FieldAgent to which
 # you wish to attach the file.
-file_path = '<< Your fully qualified file path goes here. For example: test_large.geojson >>'
+file_path = '<< Your fully qualified file path goes here. For example: test.geojson >>'
 content_type = '<< Your MIME content type goes here. For example: application/json >>'
 parent_sentera_id = '<< Your parent Sentera ID goes here >>'
 file_owner_type = '<< Your file owner type goes here. For example: MOSAIC >>'

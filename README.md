@@ -4,6 +4,14 @@ Examples in different languages that demonstrate how to upload a file to [Senter
 ## API Credentials
 To run these file upload examples, you must first obtain an access token for your FieldAgent user that will be used to authenticate your requests to the FieldAgent GraphQL API. See https://api.sentera.com/api/getting_started/authentication_and_authorization.html for details on obtaining an API access token. Once you have a valid access token, paste it into a file named `fieldagent_access_token.txt` that is located in the same directory as the code examples.
 
+## FieldAgent Server
+These file upload example scripts are pointed at FieldAgent's production server (e.g https://api.sentera.com). To run them against a different FieldAgent server, specify a `FIELDAGENT_SERVER` environment variable to the command that runs an upload script.
+
+For example, the command below runs the Ruby multipart file upload example against the FieldAgent staging server:
+```
+$ FIELDAGENT_SERVER=https://apistaging.sentera.com ruby multipart_file_upload.rb
+```
+
 ## Single PUT Request Workflow
 There are three basic steps for uploading a file using a single PUT request, and then using it with Sentera FieldAgent:
 
@@ -14,7 +22,7 @@ There are three basic steps for uploading a file using a single PUT request, and
 Full documentation of this workflow can be found [here](https://api.sentera.com/api/getting_started/uploading_files.html)
 
 ## Multi-Part Workflow
-There are four basic steps for uploading a file in multiple parts, and thenusing it with Sentera FieldAgent:
+There are four basic steps for uploading a file in multiple parts, and then using it with Sentera FieldAgent:
 
 1. **Create a multi-part file upload** - Request to begin a multi-part file upload to Sentera's cloud storage.
 2. **Upload the file in parts** - Upload parts of a file directly to Sentera's cloud storage by first requesting credentials for uploading a file part, and then uploading the file part using a pre-signed upload URL.
@@ -26,5 +34,5 @@ Full documentation of this workflow can be found [here](https://api.sentera.com/
 ## Examples
 | Language | Run Command                       |
 | :------- | :---------------------------------|
-| Ruby     | `> ruby file_upload.rb`           |
-| Ruby     | `> ruby multipart_file_upload.rb` |
+| Ruby     | `$ ruby file_upload.rb`           |
+| Ruby     | `$ ruby multipart_file_upload.rb` |

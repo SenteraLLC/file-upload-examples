@@ -3,7 +3,7 @@ require 'net/http'
 
 FIELDAGENT_ACCESS_TOKEN_FILENAME = 'fieldagent_access_token.txt' # Add your FieldAgent access token to this file
 
-GQL_ENDPOINT = 'https://api.sentera.com/graphql'
+GQL_ENDPOINT = ENV.fetch('FIELDAGENT_SERVER', 'https://api.sentera.com') + '/graphql' # Defaults to FieldAgent production
 
 #
 # Loads the access token specified in FIELDAGENT_ACCESS_TOKEN_FILENAME
@@ -44,7 +44,7 @@ def make_graphql_request(access_token, gql)
   request = Net::HTTP::Post.new(uri.path, headers)
   request.body = { 'query': gql }.to_json
 
-  puts "Make GraphQL request: gql = #{gql}"
+  puts "Make GraphQL request: uri = #{GQL_ENDPOINT}, gql = #{gql}"
   response = http.request(request)
   puts "GraphQL response: code = #{response.code}, body = #{response.body}"
 
