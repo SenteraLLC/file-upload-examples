@@ -2,7 +2,7 @@
 Examples in different languages that demonstrate how to upload a file to [Sentera's FieldAgent platform](https://sentera.com/fieldagent-platform/)
 
 ## API Credentials
-To run these file upload examples, you must first obtain an access token for your FieldAgent user that will be used to authenticate your requests to the FieldAgent GraphQL API. See https://api.sentera.com/api/getting_started/authentication_and_authorization.html for details on obtaining an API access token. Once you have a valid access token, paste it into a file named `auth_token.txt` that is located in the same directory as the code examples.
+To run these file upload examples, you must first obtain an access token for your FieldAgent user that will be used to authenticate your requests to the FieldAgent GraphQL API. See https://api.sentera.com/api/getting_started/authentication_and_authorization.html for details on obtaining an API access token. Once you have a valid access token, paste it into a file named `fieldagent_access_token.txt` that is located in the same directory as the code examples.
 
 ## Single PUT Request Workflow
 There are three basic steps for uploading a file using a single PUT request, and then using it with Sentera FieldAgent:
