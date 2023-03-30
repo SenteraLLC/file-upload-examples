@@ -59,7 +59,7 @@ def create_file_upload(file_path, content_type)
     }
   GQL
 
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   json.dig('data', 'create_file_upload')
 end
@@ -100,19 +100,21 @@ end
 # a file owner that belongs to the caller's FieldAgent organization.
 #
 # @param [string] file_id ID of the uploaded file
+# @param [string] file_owner_type Type of file owner to create. For example,
+#                                 FEATURE_SET, MOSAIC, etc.
 # @param [string] file_owner_sentera_id Sentera ID of the resource
 #                                       (field, survey, feature set, etc.)
 #                                       to which the file should be attached.
 #
 # @return [Hash] Hash containing results of the GraphQL request
 #
-def use_file(file_id, file_owner_sentera_id)
+def use_file(file_id, file_owner_type, file_owner_sentera_id)
   puts 'Use file'
 
   gql = <<~GQL
     mutation ImportFiles {
       import_files (
-        owner_type: FEATURE_SET
+        owner_type: #{file_owner_type}
         owner_sentera_id: "#{file_owner_sentera_id}"
         file_type: FLIGHT_LOG
         file_keys: ["#{file_id}"]
@@ -122,22 +124,21 @@ def use_file(file_id, file_owner_sentera_id)
     }
   GQL
 
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   json.dig('data', 'import_files')
 end
 
 # MAIN
 
-FIELDAGENT_ACCESS_TOKEN = load_fieldagent_access_token
-
 # **************************************************
 # Set these variables based on the file you want to
 # upload and the resource within FieldAgent to which
 # you wish to attach the file.
-file_path = '<< Your fully qualified file path goes here. For example: test.geojson >>'
-content_type = '<< Your MIME content type goes here. For example: application/json >>'
-file_owner_sentera_id = '<< Your file owner Sentera ID goes here >>'
+file_path = 'test.geojson' # Your fully qualified file path goes here
+content_type = 'application/json' # Your MIME content type goes here
+file_owner_type = 'FEATURE_SET' # Your file owner type goes here
+file_owner_sentera_id = 'sezjmpa_FS_arpmAcmeOrg_CV_deve_b822f1701_230330_110124' # Your file owner Sentera ID goes here
 # **************************************************
 
 # Step 1: Create a file upload
@@ -150,10 +151,10 @@ file_id = results['id']
 upload_file(upload_url, upload_headers, file_path)
 
 # Step 3: Use the file with FieldAgent
-results = use_file(file_id, file_owner_sentera_id)
+results = use_file(file_id, file_owner_type, file_owner_sentera_id)
 
 if results
-  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_sentera_id}."
+  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_type} #{file_owner_sentera_id}."
 else
   puts 'Failed'
 end

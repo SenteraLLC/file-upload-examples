@@ -1,26 +1,16 @@
 # frozen_string_literal: true
 require 'net/http'
 
-FIELDAGENT_ACCESS_TOKEN_FILENAME = 'fieldagent_access_token.txt' # Add your FieldAgent access token to this file
-
-GQL_ENDPOINT = ENV.fetch('FIELDAGENT_SERVER', 'https://api.sentera.com') + '/graphql' # Defaults to FieldAgent production
-
 #
-# Loads the access token specified in FIELDAGENT_ACCESS_TOKEN_FILENAME
+# Loads the access token from a file on disk
 #
 # See https://api.sentera.com/api/getting_started/authentication_and_authorization.html
 # for details on how to obtain an auth token to use with Sentera's GraphQL API
 #
 # @return [string] FieldAgent
 #
-def load_fieldagent_access_token
-  unless File.exist?(FIELDAGENT_ACCESS_TOKEN_FILENAME)
-    raise <<~ERROR
-      #{FIELDAGENT_ACCESS_TOKEN_FILENAME} does not exist.
-      Copy #{FIELDAGENT_ACCESS_TOKEN_FILENAME}.example to #{FIELDAGENT_ACCESS_TOKEN_FILENAME},
-      replace the placeholder with your auth token, and then run again.
-    ERROR
-  end
+def load_access_token
+  return unless File.exist?(FIELDAGENT_ACCESS_TOKEN_FILENAME)
 
   File.read(FIELDAGENT_ACCESS_TOKEN_FILENAME)
 end
@@ -33,13 +23,13 @@ end
 #
 # @return [Net::HTTP::Response] HTTP response object
 #
-def make_graphql_request(access_token, gql)
+def make_graphql_request(gql)
   uri = URI(GQL_ENDPOINT)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = GQL_ENDPOINT.include?('https://')
   headers = {
     'Content-Type': 'application/json',
-    'Authorization': "Bearer #{access_token}"
+    'Authorization': "Bearer #{FIELDAGENT_ACCESS_TOKEN}"
   }
   request = Net::HTTP::Post.new(uri.path, headers)
   request.body = { 'query': gql }.to_json
@@ -49,4 +39,18 @@ def make_graphql_request(access_token, gql)
   puts "GraphQL response: code = #{response.code}, body = #{response.body}"
 
   response
+end
+
+GQL_ENDPOINT = ENV.fetch('FIELDAGENT_SERVER', 'https://api.sentera.com') + '/graphql' # Defaults to FieldAgent production
+
+FIELDAGENT_ACCESS_TOKEN_FILENAME = 'fieldagent_access_token.txt'
+
+FIELDAGENT_ACCESS_TOKEN = ENV.fetch('FIELDAGENT_ACCESS_TOKEN', load_access_token)
+if FIELDAGENT_ACCESS_TOKEN.nil?
+  raise <<~ERROR
+    Unable to read your FieldAgent access token.
+    Specify the access token using a FIELDAGENT_ACCESS_TOKEN environment variable,
+    or, copy #{FIELDAGENT_ACCESS_TOKEN_FILENAME}.example to #{FIELDAGENT_ACCESS_TOKEN_FILENAME},
+    replace the placeholder with your auth token, and then run again.
+  ERROR
 end

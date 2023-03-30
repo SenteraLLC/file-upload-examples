@@ -2,7 +2,16 @@
 Examples in different languages that demonstrate how to upload a file to [Sentera's FieldAgent platform](https://sentera.com/fieldagent-platform/)
 
 ## API Credentials
-To run these file upload examples, you must first obtain an access token for your FieldAgent user that will be used to authenticate your requests to the FieldAgent GraphQL API. See https://api.sentera.com/api/getting_started/authentication_and_authorization.html for details on obtaining an API access token. Once you have a valid access token, paste it into a file named `fieldagent_access_token.txt` that is located in the same directory as the code examples.
+To run these file upload examples, you must first obtain an access token for your FieldAgent user that will be used to authenticate your requests to the FieldAgent GraphQL API. See https://api.sentera.com/api/getting_started/authentication_and_authorization.html for details on obtaining an API access token.
+
+Once you have a valid access token, specify a `FIELDAGENT_ACCESS_TOKEN` environment variable to the command that runs an upload script.
+
+For example, the command below runs the Ruby multipart file upload example against the FieldAgent staging server:
+```
+$ FIELDAGENT_ACCESS_TOKEN=SFaY5r2CAqoVJtlrbfqC62W1UqJUAdQjlnCjB8eqvJg ruby multipart_file_upload.rb
+```
+
+Or alternately, you can paste your FieldAgent access token into a file named `fieldagent_access_token.txt` that is located in the same directory as the code examples.
 
 ## FieldAgent Server
 These file upload example scripts are pointed at FieldAgent's production server (e.g https://api.sentera.com). To run them against a different FieldAgent server, specify a `FIELDAGENT_SERVER` environment variable to the command that runs an upload script.

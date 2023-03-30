@@ -69,7 +69,7 @@ def create_multipart_file_upload(file_path, content_type, parent_sentera_id, fil
     }
   GQL
 
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   json.dig('data', 'create_multipart_file_upload')
 end
@@ -171,7 +171,7 @@ def prepare_file_part(part_number, s3_key, upload_id)
     }
   GQL
 
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   results = json.dig('data', 'prepare_multipart_file_upload_part')
   results['url']
@@ -206,7 +206,7 @@ def complete_multipart_file_upload(parts, s3_key, upload_id)
     }
   GQL
 
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   json.dig('data', 'complete_multipart_file_upload')
 end
@@ -259,27 +259,29 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
       }
     }
   GQL
-  response = make_graphql_request(FIELDAGENT_ACCESS_TOKEN, gql)
+  response = make_graphql_request(gql)
   json = JSON.parse(response.body)
   json.dig('data', 'upsert_files')
 end
 
 # MAIN
 
-FIELDAGENT_ACCESS_TOKEN = load_fieldagent_access_token
-
 # **************************************************
 # Set these variables based on the file you want to
 # upload and the resource within FieldAgent to which
 # you wish to attach the file.
-file_path = '<< Your fully qualified file path goes here. For example: test.geojson >>'
-content_type = '<< Your MIME content type goes here. For example: application/json >>'
-parent_sentera_id = '<< Your parent Sentera ID goes here >>'
-file_owner_type = '<< Your file owner type goes here. For example: MOSAIC >>'
+file_path = 'test.tif' # Your fully qualified file path goes here
+content_type = 'image/tiff' # Your MIME content type goes here'
+parent_sentera_id = 'llzwked_CO_arpmAcmeOrg_CV_deve_b822f1701_230330_110124' # Your parent Sentera ID goes here
+file_owner_type = 'MOSAIC' # Your file owner type goes here
 # **************************************************
 
 # Step 1: Create a multipart file upload
 results = create_multipart_file_upload(file_path, content_type, parent_sentera_id, file_owner_type)
+if results.nil?
+  puts 'Failed'
+  exit
+end
 file_id = results['file_id']
 file_owner_sentera_id = results['owner_sentera_id']
 s3_key = results['s3_key']
@@ -295,7 +297,7 @@ complete_multipart_file_upload(parts, s3_key, upload_id)
 results = use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
 
 if results
-  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_sentera_id}."
+  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_type} #{file_owner_sentera_id}."
 else
   puts 'Failed'
 end
