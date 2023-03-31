@@ -96,7 +96,7 @@ def upload_file(file_path, s3_key, upload_id)
 
   # Compute the number of parts based on 5MB chunks
   file_size_bytes = File.size(file_path)
-  part_size_bytes = 5 * 1024 * 1024 # 5 megabytes is the smaller part size AWS S3 permits
+  part_size_bytes = 5 * 1024 * 1024 # 5 megabytes is the smallest part size AWS S3 permits
   num_parts = file_size_bytes / part_size_bytes
   remainder = file_size_bytes % part_size_bytes
   num_parts += 1 if remainder > 0
