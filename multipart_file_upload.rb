@@ -21,7 +21,7 @@ require './utils'
 # debugger statements in the code to trace the code execution.
 #
 # > gem install pry
-# > gem install pry-debug
+# > gem install pry-byebug
 #
 # require 'pry'
 # require 'pry-byebug'
