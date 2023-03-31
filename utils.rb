@@ -23,7 +23,7 @@ end
 #
 # @return [Net::HTTP::Response] HTTP response object
 #
-def make_graphql_request(gql)
+def make_graphql_request(gql, variables = {})
   uri = URI(GQL_ENDPOINT)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = GQL_ENDPOINT.include?('https://')
@@ -32,9 +32,9 @@ def make_graphql_request(gql)
     'Authorization': "Bearer #{FIELDAGENT_ACCESS_TOKEN}"
   }
   request = Net::HTTP::Post.new(uri.path, headers)
-  request.body = { 'query': gql }.to_json
+  request.body = { 'query': gql, variables: variables }.to_json
 
-  puts "Make GraphQL request: uri = #{GQL_ENDPOINT}, gql = #{gql}"
+  puts "Make GraphQL request: uri = #{GQL_ENDPOINT}, gql = #{gql}, variables = #{variables}"
   response = http.request(request)
   puts "GraphQL response: code = #{response.code}, body = #{response.body}"
 

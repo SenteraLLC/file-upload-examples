@@ -47,12 +47,17 @@ def create_file_upload(file_path, content_type)
   checksum = Digest::MD5.base64digest(File.read(file_path))
 
   gql = <<~GQL
-    mutation CreateFileUploadDemo {
-      create_file_upload (
-        filename: "#{filename}"
-        content_type: "#{content_type}"
-        byte_size: #{byte_size}
-        checksum: "#{checksum}"
+    mutation CreateFileUpload(
+      $byte_size: BigInt!
+      $checksum: String!
+      $content_type: String!
+      $filename: String!
+    ) {
+      create_file_upload(
+        filename: $filename
+        content_type: $content_type
+        byte_size: $byte_size
+        checksum: $checksum
       ) {
         id
         url
@@ -61,7 +66,14 @@ def create_file_upload(file_path, content_type)
     }
   GQL
 
-  response = make_graphql_request(gql)
+  variables = {
+    byte_size: byte_size,
+    checksum: checksum,
+    content_type: content_type,
+    filename: filename
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'create_file_upload')
 end
@@ -114,19 +126,31 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id)
   puts 'Use file'
 
   gql = <<~GQL
-    mutation ImportFiles {
-      import_files (
-        owner_type: #{file_owner_type}
-        owner_sentera_id: "#{file_owner_sentera_id}"
-        file_type: FLIGHT_LOG
-        file_keys: ["#{file_id}"]
+    mutation ImportFiles(
+      $file_keys: [String!]!
+      $file_type: FileType!
+      $owner_sentera_id: ID!
+      $owner_type: FileOwnerType!
+    ) {
+      import_files(
+        owner_type: $owner_type
+        owner_sentera_id: $owner_sentera_id
+        file_type: $file_type
+        file_keys: $file_keys
       ) {
         status
       }
     }
   GQL
 
-  response = make_graphql_request(gql)
+  variables = {
+    owner_type: file_owner_type,
+    owner_sentera_id: file_owner_sentera_id,
+    file_type: 'FLIGHT_LOG',
+    file_keys: [file_id]
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'import_files')
 end

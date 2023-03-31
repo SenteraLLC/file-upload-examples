@@ -53,15 +53,17 @@ def create_multipart_file_upload(file_path, content_type, parent_sentera_id, fil
   byte_size = File.size(file_path)
 
   gql = <<~GQL
-    mutation CreateMultipartFileUpload {
-      create_multipart_file_upload (
-        byte_size: #{byte_size}
-        content_type: "#{content_type}"
-        filename: "#{filename}"
-        file_upload_owner: {
-          parent_sentera_id: "#{parent_sentera_id}"
-          owner_type: #{file_owner_type}
-        }
+    mutation CreateMultipartFileUpload(
+      $byte_size: BigInt!
+      $content_type: String!
+      $filename: String!
+      $file_upload_owner: FileUploadOwnerInput!
+    ) {
+      create_multipart_file_upload(
+        byte_size: $byte_size
+        content_type: $content_type
+        filename: $filename
+        file_upload_owner: $file_upload_owner
       ) {
         file_id
         owner_sentera_id
@@ -71,7 +73,17 @@ def create_multipart_file_upload(file_path, content_type, parent_sentera_id, fil
     }
   GQL
 
-  response = make_graphql_request(gql)
+  variables = {
+    byte_size: byte_size,
+    content_type: content_type,
+    filename: filename,
+    file_upload_owner: {
+      parent_sentera_id: parent_sentera_id,
+      owner_type: file_owner_type
+    }
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'create_multipart_file_upload')
 end
@@ -162,18 +174,28 @@ end
 #
 def prepare_file_part(part_number, s3_key, upload_id)
   gql = <<~GQL
-    mutation PrepareMultipartFileUploadPart {
-      prepare_multipart_file_upload_part (
-        part_number: #{part_number}
-        s3_key: "#{s3_key}"
-        upload_id: "#{upload_id}"
+    mutation PrepareMultipartFileUploadPart(
+      $part_number: Int!
+      $s3_key: String!
+      $upload_id: ID!
+    ) {
+      prepare_multipart_file_upload_part(
+        part_number: $part_number
+        s3_key: $s3_key
+        upload_id: $upload_id
       ) {
         url
       }
     }
   GQL
 
-  response = make_graphql_request(gql)
+  variables = {
+    part_number: part_number,
+    s3_key: s3_key,
+    upload_id: upload_id
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   results = json.dig('data', 'prepare_multipart_file_upload_part')
   results['url']
@@ -193,22 +215,27 @@ end
 def complete_multipart_file_upload(parts, s3_key, upload_id)
   puts 'Complete multipart file upload'
 
-  parts_gql = '[' + parts.reduce("") do |memo, part|
-    memo += %Q|{part_number: #{part[:part_number]}, etag: "#{part[:etag]}"}|
-    memo
-  end + ']'
-
   gql = <<~GQL
-    mutation CompleteMultipartFileUpload {
-      complete_multipart_file_upload (
-        parts: #{parts_gql}
-        s3_key: "#{s3_key}"
-        upload_id: "#{upload_id}"
+    mutation CompleteMultipartFileUpload(
+      $parts: [FilePartInput!]!
+      $s3_key: String!
+      $upload_id: ID!
+    ) {
+      complete_multipart_file_upload(
+        parts: $parts
+        s3_key: $s3_key
+        upload_id: $upload_id
       )
     }
   GQL
 
-  response = make_graphql_request(gql)
+  variables = {
+    parts: parts,
+    s3_key: s3_key,
+    upload_id: upload_id
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'complete_multipart_file_upload')
 end
@@ -239,21 +266,13 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
   byte_size = File.size(file_path)
 
   gql = <<~GQL
-    mutation UpsertFiles {
-      upsert_files (
-        owner: {
-          owner_type: #{file_owner_type}
-          sentera_id: "#{file_owner_sentera_id}"
-        }
-        files: [
-          {
-            file_type: #{file_owner_type}
-            filename: "#{filename}"
-            path: "#{path}"
-            size: #{byte_size}
-            version: 1
-          }
-        ]
+    mutation UpsertFiles(
+      $files: [FileImport!]!
+      $owner: FileOwnerInput!
+    ) {
+      upsert_files(
+        owner: $owner
+        files: $files
       ) {
         succeeded {
           sentera_id
@@ -261,7 +280,24 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
       }
     }
   GQL
-  response = make_graphql_request(gql)
+
+  variables = {
+    owner: {
+      owner_type: file_owner_type,
+      sentera_id: file_owner_sentera_id
+    },
+    files: [
+      {
+        file_type: file_owner_type,
+        filename: filename,
+        path: path,
+        size: byte_size,
+        version: 1
+      }
+    ]
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'upsert_files')
 end
