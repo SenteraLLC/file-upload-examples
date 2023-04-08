@@ -1,67 +1,63 @@
+#!/usr/bin/env ruby
+
 # frozen_string_literal: true
 
-require 'net/http'
-require 'json'
-require 'digest'
-
-# ================================================================
-# A Ruby example that demonstrates the workflow for uploading a
-# file to Sentera's cloud storage and then using the file with
-# Sentera's GraphQL API to associate it with a resource such as a
-# field, survey, feature set, etc.
+# ==================================================================
+# A Ruby example that demonstrates the workflow for uploading a file
+# to Sentera's cloud storage using a single PUT operation, and then
+# attaching the file to something like a field, survey, feature set,
+# mosaic, etc.
 #
 # Full documentation of this workflow can be found here:
 # https://api.sentera.com/api/getting_started/uploading_files.html
 #
 # Contact support@sentera.com with any questions.
-# ================================================================
+# ==================================================================
 
-GQL_ENDPOINT = 'https://api.sentera.com/graphql'
+require 'net/http'
+require 'json'
+require 'digest'
+require './utils'
 
-AUTH_TOKEN_FILENAME = 'auth_token.txt' # Add your API auth token to this file
+# If you want to debug this script, run the following gem install
+# commands. Then uncomment the require statements below, and put
+# debugger statements in the code to trace the code execution.
+#
+# > gem install pry
+# > gem install pry-byebug
+#
+# require 'pry'
+# require 'pry-byebug'
 
-def load_auth_token
-  unless File.exist?(AUTH_TOKEN_FILENAME)
-    raise <<~ERROR
-      #{AUTH_TOKEN_FILENAME} does not exist.
-      Copy #{AUTH_TOKEN_FILENAME}.example to #{AUTH_TOKEN_FILENAME},
-      replace the placeholder with your auth token, and then run again.
-    ERROR
-  end
-
-  File.read(AUTH_TOKEN_FILENAME)
-end
-
-# See https://api.sentera.com/api/getting_started/authentication_and_authorization.html
-# for details on how to obtain an auth token to use with Sentera's GraphQL API
-AUTH_TOKEN = load_auth_token
-
-def prepare_file_upload(file_path, content_type)
-  #
-  # This method demonstrates how to use the create_file_upload
-  # mutation in Sentera's GraphQL API to prepare a file for
-  # upload to Sentera's cloud storage.
-  #
-  uri = URI(GQL_ENDPOINT)
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = GQL_ENDPOINT.include?('https://')
-  headers = {
-    'Content-Type': 'application/json',
-    'Authorization': "Bearer #{AUTH_TOKEN}"
-  }
-  request = Net::HTTP::Post.new(uri.path, headers)
+#
+# This method demonstrates how to use the create_file_upload
+# mutation in Sentera's GraphQL API to prepare a file for
+# upload to Sentera's cloud storage.
+#
+# @param [string] file_path Fully qualified path to file to upload
+# @param [string] content_type MIME content type of the file
+#
+# @return [Hash] Hash containing results of the GraphQL request
+#
+def create_file_upload(file_path, content_type)
+  puts 'Create file upload'
 
   filename = File.basename(file_path)
   byte_size = File.size(file_path)
   checksum = Digest::MD5.base64digest(File.read(file_path))
 
   gql = <<~GQL
-    mutation CreateFileUploadDemo {
-      create_file_upload (
-        filename: "#{filename}"
-        content_type: "#{content_type}"
-        byte_size: #{byte_size}
-        checksum: "#{checksum}"
+    mutation CreateFileUpload(
+      $byte_size: BigInt!
+      $checksum: String!
+      $content_type: String!
+      $filename: String!
+    ) {
+      create_file_upload(
+        filename: $filename
+        content_type: $content_type
+        byte_size: $byte_size
+        checksum: $checksum
       ) {
         id
         url
@@ -69,22 +65,35 @@ def prepare_file_upload(file_path, content_type)
       }
     }
   GQL
-  request.body = { 'query': gql }.to_json
-  response = http.request(request)
-  puts "create_file_upload response.code = #{response.code}"
-  puts "create_file_upload response.body = #{response.body}"
 
+  variables = {
+    byte_size: byte_size,
+    checksum: checksum,
+    content_type: content_type,
+    filename: filename
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'create_file_upload')
 end
 
+#
+# This method demonstrates how to upload a file to
+# Sentera's cloud storage using the URL and headers
+# that were retrieved via the create_file_upload
+# GraphQL mutation.
+#
+# @param [string] url Pre-signed URL used to upload the file
+# @param [Hash] headers Hash of headers used on the request to
+#                       PUT the file to the specified URL
+# @param [string] file_path Fully qualified path to file to upload
+#
+# @return [void]
+#
 def upload_file(url, headers, file_path)
-  #
-  # This method demonstrates how to upload a file to
-  # Sentera's cloud storage using the URL and headers
-  # that were retrieved via the create_file_upload
-  # GraphQL mutation.
-  #
+  puts 'Upload file'
+
   uri = URI(url)
   file_contents = File.read(file_path)
   Net::HTTP.start(uri.host) do |http|
@@ -96,63 +105,82 @@ def upload_file(url, headers, file_path)
   end
 end
 
-def use_file(file_id)
-  #
-  # This method demonstrates how to use the ID of a file that
-  # was previously uploaded to Sentera's cloud storage with one
-  # of the mutations in Sentera's GraphQL API that accepts a
-  # file ID as an input. In this example, we'll use the
-  # import_files GraphQL mutation, and attach the file to
-  # a feature set that the caller is permitted to access.
-  #
-  uri = URI(GQL_ENDPOINT)
-  http = Net::HTTP.new(uri.host, uri.port)
-  http.use_ssl = GQL_ENDPOINT.include?('https://')
-  headers = {
-    'Content-Type': 'application/json',
-    'Authorization': "Bearer #{AUTH_TOKEN}"
-  }
-  request = Net::HTTP::Post.new(uri.path, headers)
-
-  owner_sentera_id = '<Your feature set ID goes here>'
+#
+# This method demonstrates how to use the ID of a file that
+# was previously uploaded to Sentera's cloud storage with one
+# of the mutations in Sentera's GraphQL API that accepts a
+# file ID as an input. In this example, we'll use the
+# import_files GraphQL mutation, and attach the file to
+# a file owner that belongs to the caller's FieldAgent organization.
+#
+# @param [string] file_id ID of the uploaded file
+# @param [string] file_owner_type Type of file owner to create. For example,
+#                                 FEATURE_SET, MOSAIC, etc.
+# @param [string] file_owner_sentera_id Sentera ID of the resource
+#                                       (field, survey, feature set, etc.)
+#                                       to which the file should be attached.
+#
+# @return [Hash] Hash containing results of the GraphQL request
+#
+def use_file(file_id, file_owner_type, file_owner_sentera_id)
+  puts 'Use file'
 
   gql = <<~GQL
-    mutation UseFileDemo {
-      import_files (
-        owner_type: FEATURE_SET
-        owner_sentera_id: "#{owner_sentera_id}"
-        file_type: FLIGHT_LOG
-        file_keys: ["#{file_id}"]
+    mutation ImportFiles(
+      $file_keys: [String!]!
+      $file_type: FileType!
+      $owner_sentera_id: ID!
+      $owner_type: FileOwnerType!
+    ) {
+      import_files(
+        owner_type: $owner_type
+        owner_sentera_id: $owner_sentera_id
+        file_type: $file_type
+        file_keys: $file_keys
       ) {
         status
       }
     }
   GQL
-  request.body = { 'query': gql }.to_json
-  response = http.request(request)
-  puts "use_file response.code = #{response.code}"
-  puts "use_file response.body = #{response.body}"
 
+  variables = {
+    owner_type: file_owner_type,
+    owner_sentera_id: file_owner_sentera_id,
+    file_type: 'FLIGHT_LOG',
+    file_keys: [file_id]
+  }
+
+  response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
   json.dig('data', 'import_files')
 end
 
-# -------------------------------------------------------------
 # MAIN
 
-file_path = 'example_flight_log.json'
-content_type = 'application/json'
+# **************************************************
+# Set these variables based on the file you want to
+# upload and the resource within FieldAgent to which
+# you wish to attach the file.
+file_path = 'test.geojson' # Your fully qualified file path goes here
+content_type = 'application/json' # Your MIME content type goes here
+file_owner_type = 'FEATURE_SET' # Your file owner type goes here
+file_owner_sentera_id = 'sezjmpa_FS_arpmAcmeOrg_CV_deve_b822f1701_230330_110124' # Your file owner Sentera ID goes here
+# **************************************************
 
-# Step 1: Prepare to upload a file
-prepared_upload_json = prepare_file_upload(file_path, content_type)
+# Step 1: Create a file upload
+results = create_file_upload(file_path, content_type)
+upload_url = results['url']
+upload_headers = results['headers']
+file_id = results['id']
 
 # Step 2: Upload the file
-upload_url = prepared_upload_json['url']
-upload_headers = prepared_upload_json['headers']
 upload_file(upload_url, upload_headers, file_path)
 
-# Step 3: Use the file with Sentera FieldAgent
-file_id = prepared_upload_json['id']
-use_file(file_id)
+# Step 3: Use the file with FieldAgent
+results = use_file(file_id, file_owner_type, file_owner_sentera_id)
 
-puts 'Done!'
+if results
+  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_type} #{file_owner_sentera_id}."
+else
+  puts 'Failed'
+end
