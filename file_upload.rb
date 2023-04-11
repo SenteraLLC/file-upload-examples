@@ -181,7 +181,7 @@ file_id = results['id']
 upload_file(upload_url, upload_headers, file_path)
 
 # Step 3: Use the file with FieldAgent
-results = use_file(file_id, owner_type, owner_sentera_id)
+results = import_feature_set(file_id, owner_type, owner_sentera_id)
 
 if results
   puts "Done! File #{file_path} was successfully imported to a feature set attached to #{owner_type} #{owner_sentera_id}."
