@@ -329,7 +329,7 @@ parts = upload_file(file_path, s3_key, upload_id)
 complete_multipart_file_upload(parts, s3_key, upload_id)
 
 # Step 4: Use the file with Sentera FieldAgent
-results = use_file(owner_sentera_id, parent_sentera_id, file_id)
+results = import_mosaic(owner_sentera_id, parent_sentera_id, file_id)
 
 if results
   puts "Done! File #{file_path} was successfully uploaded and imported to #{owner_type} #{owner_sentera_id}."
