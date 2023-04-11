@@ -41,7 +41,7 @@ There are four basic steps for uploading a file in multiple parts, and then usin
 Full documentation of this workflow can be found [here](https://api.sentera.com/api/getting_started/uploading_files.html)
 
 ## Examples
-| Language | Run Command                       |
-| :------- | :---------------------------------|
-| Ruby     | `$ ruby file_upload.rb`           |
-| Ruby     | `$ ruby multipart_file_upload.rb` |
+| Language | Run Command                       | Example Command |
+| :------- | :---------------------------------|-----------------|
+| Ruby     | `$ ruby file_upload.rb`           | `FIELDAGENT_ACCESS_TOKEN=AKgnGiLNpk1AjppMqWSWbiNMNUYepcP8EalLo_gYRpM FIELDAGENT_SERVER=https://api.sentera.com OWNER_TYPE=SURVEY OWNER_SENTERA_ID=9nfdf02_CO_ytwfAcmeOrg_CV_deve_c49295f37_230411_080321 ruby file_upload.rb` |
+| Ruby     | `$ ruby multipart_file_upload.rb` | `FIELDAGENT_ACCESS_TOKEN=AKgnGiLNpk1AjppMqWSWbiNMNUYepcP8EalLo_gYRpM FIELDAGENT_SERVER=https://api.sentera.com PARENT_SENTERA_ID=9nfdf02_CO_ytwfAcmeOrg_CV_deve_c49295f37_230411_080321 ruby multipart_file_upload.rb` |
