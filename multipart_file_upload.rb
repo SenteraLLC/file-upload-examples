@@ -258,7 +258,7 @@ end
 #
 # @return [Hash] Hash containing results of the GraphQL request
 #
-def use_file(owner_sentera_id, parent_sentera_id, file_id)
+def import_mosaic(owner_sentera_id, parent_sentera_id, file_id)
   puts 'Use file'
 
   gql = <<~GQL
