@@ -245,36 +245,40 @@ end
 # was previously uploaded to Sentera's cloud storage with one
 # of the mutations in Sentera's GraphQL API that accepts a
 # file ID as an input. In this example, we'll use the
-# import_files GraphQL mutation, and attach the file to
-# a feature set that the caller is permitted to access.
+# import_mosaic GraphQL mutation to attach the file to
+# the mosaic created in step 1.
 #
+# @param [string] owner_sentera_id Sentera ID of the resource in
+#                                  FieldAgent to which the file should
+#                                  be attached.
+# @param [string] parent_sentera_id Sentera ID of the resource in
+#                                   FieldAgent that will is the parent
+#                                   of the owner.
 # @param [string] file_id ID of the uploaded file
-# @param [string] file_owner_type Type of file owner to create. For example,
-#                                 FEATURE_SET, MOSAIC, etc.
-# @param [string] file_owner_sentera_id Sentera ID of the resource
-#                                       (field, survey, feature set, etc.)
-#                                       to which the file should be attached.
-# @param [string] file_path Fully qualified path to file that was uploaded
 #
 # @return [Hash] Hash containing results of the GraphQL request
 #
-def use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
+def import_mosaic(owner_sentera_id, parent_sentera_id, file_id)
   puts 'Use file'
 
-  path = File.dirname(file_path)
-  filename = File.basename(file_path)
-  byte_size = File.size(file_path)
-
   gql = <<~GQL
-    mutation UpsertFiles(
-      $files: [FileImport!]!
-      $owner: FileOwnerInput!
+    mutation ImportMosaic(
+      $file_keys: [FileKey!]
+      $mosaic_sentera_id: ID
+      $mosaic_type: MosaicImportType!
+      $name: String!
+      $quality: MosaicQuality!
+      $survey_sentera_id: ID
     ) {
-      upsert_files(
-        owner: $owner
-        files: $files
-      ) {
-        succeeded {
+      import_mosaic(
+        file_keys: $file_keys
+        mosaic_sentera_id: $mosaic_sentera_id
+        mosaic_type: $mosaic_type
+        name: $name
+        quality: $quality
+        survey_sentera_id: $survey_sentera_id
+        ) {
+        survey {
           sentera_id
         }
       }
@@ -282,24 +286,17 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
   GQL
 
   variables = {
-    owner: {
-      owner_type: file_owner_type,
-      sentera_id: file_owner_sentera_id
-    },
-    files: [
-      {
-        file_type: file_owner_type,
-        filename: filename,
-        path: path,
-        size: byte_size,
-        version: 1
-      }
-    ]
+    file_keys: [file_id],
+    mosaic_sentera_id: owner_sentera_id,
+    mosaic_type: 'RGB',
+    name: 'Test Mosaic',
+    quality: 'FULL',
+    survey_sentera_id: parent_sentera_id
   }
 
   response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
-  json.dig('data', 'upsert_files')
+  json.dig('data', 'import_mosaic')
 end
 
 # MAIN
@@ -308,20 +305,20 @@ end
 # Set these variables based on the file you want to
 # upload and the resource within FieldAgent to which
 # you wish to attach the file.
-file_path = 'test.tif' # Your fully qualified file path goes here
-content_type = 'image/tiff' # Your MIME content type goes here'
-parent_sentera_id = 'llzwked_CO_arpmAcmeOrg_CV_deve_b822f1701_230330_110124' # Your parent Sentera ID goes here
-file_owner_type = 'MOSAIC' # Your file owner type goes here
+file_path = ENV.fetch('FILE_PATH', 'test.tif') # Your fully qualified file path
+content_type = ENV.fetch('CONTENT_TYPE', 'image/tiff') # Your MIME content type
+parent_sentera_id = ENV.fetch('PARENT_SENTERA_ID', 'llzwked_CO_arpmAcmeOrg_CV_deve_b822f1701_230330_110124') # Your parent Sentera ID
+owner_type = ENV.fetch('OWNER_TYPE', 'MOSAIC') # Your owner type
 # **************************************************
 
 # Step 1: Create a multipart file upload
-results = create_multipart_file_upload(file_path, content_type, parent_sentera_id, file_owner_type)
+results = create_multipart_file_upload(file_path, content_type, parent_sentera_id, owner_type)
 if results.nil?
   puts 'Failed'
   exit
 end
 file_id = results['file_id']
-file_owner_sentera_id = results['owner_sentera_id']
+owner_sentera_id = results['owner_sentera_id']
 s3_key = results['s3_key']
 upload_id = results['upload_id']
 
@@ -332,10 +329,10 @@ parts = upload_file(file_path, s3_key, upload_id)
 complete_multipart_file_upload(parts, s3_key, upload_id)
 
 # Step 4: Use the file with Sentera FieldAgent
-results = use_file(file_id, file_owner_type, file_owner_sentera_id, file_path)
+results = import_mosaic(owner_sentera_id, parent_sentera_id, file_id)
 
 if results
-  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_type} #{file_owner_sentera_id}."
+  puts "Done! File #{file_path} was successfully uploaded and imported to #{owner_type} #{owner_sentera_id}."
 else
   puts 'Failed'
 end

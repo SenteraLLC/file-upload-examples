@@ -110,33 +110,36 @@ end
 # was previously uploaded to Sentera's cloud storage with one
 # of the mutations in Sentera's GraphQL API that accepts a
 # file ID as an input. In this example, we'll use the
-# import_files GraphQL mutation, and attach the file to
-# a file owner that belongs to the caller's FieldAgent organization.
+# import_feature_set GraphQL mutation to attach the file to
+# a feature set owned by the specified file owner
 #
 # @param [string] file_id ID of the uploaded file
-# @param [string] file_owner_type Type of file owner to create. For example,
-#                                 FEATURE_SET, MOSAIC, etc.
-# @param [string] file_owner_sentera_id Sentera ID of the resource
-#                                       (field, survey, feature set, etc.)
-#                                       to which the file should be attached.
+# @param [string] owner_type Type of owner that will own the
+#                            feature set. For example: SURVEY.
+# @param [string] owner_sentera_id Sentera ID of the resource
+#                           (field, survey, feature set, etc.)
+#                           that will own the feature set that
+#                           is created.
 #
 # @return [Hash] Hash containing results of the GraphQL request
 #
-def use_file(file_id, file_owner_type, file_owner_sentera_id)
+def import_feature_set(file_id, owner_type, owner_sentera_id)
   puts 'Use file'
 
   gql = <<~GQL
-    mutation ImportFiles(
-      $file_keys: [String!]!
-      $file_type: FileType!
+    mutation ImportFeatureSet(
+      $geometry_file_key: FileKey
+      $name: String!
       $owner_sentera_id: ID!
-      $owner_type: FileOwnerType!
+      $owner_type: FeatureSetOwnerType!
+      $type: FeatureSetType!
     ) {
-      import_files(
-        owner_type: $owner_type
+      import_feature_set(
+        geometry_file_key: $geometry_file_key
+        name: $name
         owner_sentera_id: $owner_sentera_id
-        file_type: $file_type
-        file_keys: $file_keys
+        owner_type: $owner_type
+        type: $type
       ) {
         status
       }
@@ -144,15 +147,16 @@ def use_file(file_id, file_owner_type, file_owner_sentera_id)
   GQL
 
   variables = {
-    owner_type: file_owner_type,
-    owner_sentera_id: file_owner_sentera_id,
-    file_type: 'FLIGHT_LOG',
-    file_keys: [file_id]
+    geometry_file_key: file_id,
+    name: 'Test Feature Set',
+    owner_sentera_id: owner_sentera_id,
+    owner_type: owner_type,
+    type: 'UNKNOWN'
   }
 
   response = make_graphql_request(gql, variables)
   json = JSON.parse(response.body)
-  json.dig('data', 'import_files')
+  json.dig('data', 'import_feature_set')
 end
 
 # MAIN
@@ -161,10 +165,10 @@ end
 # Set these variables based on the file you want to
 # upload and the resource within FieldAgent to which
 # you wish to attach the file.
-file_path = 'test.geojson' # Your fully qualified file path goes here
-content_type = 'application/json' # Your MIME content type goes here
-file_owner_type = 'FEATURE_SET' # Your file owner type goes here
-file_owner_sentera_id = 'sezjmpa_FS_arpmAcmeOrg_CV_deve_b822f1701_230330_110124' # Your file owner Sentera ID goes here
+file_path = ENV.fetch('FILE_PATH', 'test.geojson') # Your fully qualified file path
+content_type = ENV.fetch('CONTENT_TYPE', 'application/json') # Your MIME content type
+owner_type = ENV.fetch('OWNER_TYPE', 'SURVEY') # Your owner type
+owner_sentera_id = ENV.fetch('OWNER_SENTERA_ID', 'sezjmpa_CO_arpmAcmeOrg_CV_deve_b822f1701_230330_110124') # Your owner Sentera ID
 # **************************************************
 
 # Step 1: Create a file upload
@@ -177,10 +181,10 @@ file_id = results['id']
 upload_file(upload_url, upload_headers, file_path)
 
 # Step 3: Use the file with FieldAgent
-results = use_file(file_id, file_owner_type, file_owner_sentera_id)
+results = import_feature_set(file_id, owner_type, owner_sentera_id)
 
 if results
-  puts "Done! File #{file_path} was successfully uploaded and attached to #{file_owner_type} #{file_owner_sentera_id}."
+  puts "Done! File #{file_path} was successfully imported to a feature set attached to #{owner_type} #{owner_sentera_id}."
 else
   puts 'Failed'
 end
