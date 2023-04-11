@@ -123,7 +123,7 @@ end
 #
 # @return [Hash] Hash containing results of the GraphQL request
 #
-def use_file(file_id, owner_type, owner_sentera_id)
+def import_feature_set(file_id, owner_type, owner_sentera_id)
   puts 'Use file'
 
   gql = <<~GQL
